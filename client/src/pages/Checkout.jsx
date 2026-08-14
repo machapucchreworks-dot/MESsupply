@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function Checkout() {
   const { cartItems, clearCart } = useCart();
   const { user, token } = useAuth();
@@ -14,7 +16,6 @@ function Checkout() {
 
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  // Not logged in? Send them to login first.
   if (!user) {
     return (
       <div style={{ padding: '20px' }}>
@@ -37,7 +38,7 @@ function Checkout() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/orders', {
+      const res = await fetch(`${API_URL}/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +66,7 @@ function Checkout() {
       }
 
       // eSewa: get signed payment data, then redirect to eSewa's payment page
-      const payRes = await fetch(`http://localhost:5000/api/esewa/initiate/${data.orderId}`, {
+      const payRes = await fetch(`${API_URL}/api/esewa/initiate/${data.orderId}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -92,8 +93,8 @@ function Checkout() {
         product_code: payData.productCode,
         product_service_charge: 0,
         product_delivery_charge: 0,
-        success_url: `http://localhost:5173/order-success/${data.orderId}`,
-        failure_url: `http://localhost:5173/checkout`,
+        success_url: `${window.location.origin}/order-success/${data.orderId}`,
+        failure_url: `${window.location.origin}/checkout`,
         signed_field_names: 'total_amount,transaction_uuid,product_code',
         signature: payData.signature,
       };

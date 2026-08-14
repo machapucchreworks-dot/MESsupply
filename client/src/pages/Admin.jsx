@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function Admin() {
   const { user, token } = useAuth();
   const [products, setProducts] = useState([]);
@@ -12,14 +14,14 @@ function Admin() {
   const [error, setError] = useState('');
 
   const loadProducts = () => {
-    fetch('http://localhost:5000/api/products')
+    fetch(`${API_URL}/api/products`)
       .then((res) => res.json())
       .then(setProducts);
   };
 
   useEffect(() => {
     loadProducts();
-    fetch('http://localhost:5000/api/categories')
+    fetch(`${API_URL}/api/categories`)
       .then((res) => res.json())
       .then(setCategories);
   }, []);
@@ -40,8 +42,8 @@ function Admin() {
     setError('');
 
     const url = editingProduct
-      ? `http://localhost:5000/api/admin/products/${editingProduct.id}`
-      : 'http://localhost:5000/api/admin/products';
+      ? `${API_URL}/api/admin/products/${editingProduct.id}`
+      : `${API_URL}/api/admin/products`;
     const method = editingProduct ? 'PUT' : 'POST';
 
     try {
@@ -85,7 +87,7 @@ function Admin() {
     if (!window.confirm('Delete this product?')) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/products/${id}`, {
+      const res = await fetch(`${API_URL}/api/admin/products/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });

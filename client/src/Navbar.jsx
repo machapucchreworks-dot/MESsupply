@@ -18,9 +18,9 @@ function Navbar() {
         color: 'white',
       }}
     >
-      <Link to="/" style={{ color: 'white', textDecoration: 'none', fontSize: '20px' }}>
-        Daraz Clone
-      </Link>
+     <Link to="/" style={{ color: 'white', textDecoration: 'none', fontSize: '20px' }}>
+  MESsupply
+</Link>
       <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
         <Link to="/cart" style={{ color: 'white', textDecoration: 'none' }}>
           Cart ({itemCount})

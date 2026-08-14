@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function Home() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -9,7 +11,7 @@ function Home() {
 
   // Fetch categories once, on page load
   useEffect(() => {
-    fetch('http://localhost:5000/api/categories')
+    fetch(`${API_URL}/api/categories`)
       .then((res) => res.json())
       .then((data) => setCategories(data))
       .catch((err) => console.error('Error fetching categories:', err));
@@ -19,8 +21,8 @@ function Home() {
   useEffect(() => {
     setLoading(true);
     const url = selectedCategory
-      ? `http://localhost:5000/api/products?category_id=${selectedCategory}`
-      : 'http://localhost:5000/api/products';
+      ? `${API_URL}/api/products?category_id=${selectedCategory}`
+      : `${API_URL}/api/products`;
 
     fetch(url)
       .then((res) => res.json())
@@ -36,7 +38,7 @@ function Home() {
 
   return (
     <div style={{ padding: '20px' }}>
-      <h1>Daraz Clone</h1>
+     <h1>MESsupply</h1>
 
       {/* Category filter buttons */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
