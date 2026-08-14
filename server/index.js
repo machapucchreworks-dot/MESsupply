@@ -19,6 +19,16 @@ app.use('/api/auth', authRoutes);
 app.use('/api/esewa', esewaRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/admin', adminRoutes);
+// Get shipping zones and free-shipping threshold
+app.get('/api/shipping-zones', (req, res) => {
+  res.json({
+    zones: {
+      city: { label: 'Inside Tulsipur City', fee: 50 },
+      valley: { label: 'Dang Valley (inside/outside)', fee: 180 },
+    },
+    freeShippingThreshold: 2000,
+  });
+});
 
 // Test route
 app.get('/', (req, res) => {

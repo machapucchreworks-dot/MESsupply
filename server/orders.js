@@ -4,11 +4,17 @@ const authMiddleware = require('./authMiddleware');
 
 const router = express.Router();
 
+const SHIPPING_ZONES = {
+  city: { label: 'Inside Tulsipur City', fee: 50 },
+  valley: { label: 'Dang Valley (inside/outside)', fee: 180 },
+};
+const FREE_SHIPPING_THRESHOLD = 2000;
+
 // Place a new order (protected — must be logged in)
 router.post('/', authMiddleware, async (req, res) => {
   const client = await pool.connect();
   try {
-    const { items, shippingAddress, paymentMethod } = req.body;
+    const { items, shippingAddress, paymentMethod, phone, landmark, shippingZone } = req.body;
     const userId = req.userId;
 
     if (!items || items.length === 0) {
@@ -17,24 +23,30 @@ router.post('/', authMiddleware, async (req, res) => {
     if (!shippingAddress) {
       return res.status(400).json({ error: 'Shipping address is required' });
     }
+    if (!phone) {
+      return res.status(400).json({ error: 'Phone number is required' });
+    }
+    if (!SHIPPING_ZONES[shippingZone]) {
+      return res.status(400).json({ error: 'Invalid shipping zone' });
+    }
     if (!['cod', 'esewa'].includes(paymentMethod)) {
       return res.status(400).json({ error: 'Invalid payment method' });
     }
 
-    // Calculate total on the SERVER (never trust totals sent from the frontend)
-    const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    // Calculate subtotal + shipping fee on the SERVER (never trust totals sent from the frontend)
+    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_ZONES[shippingZone].fee;
+    const total = subtotal + shippingFee;
 
-    await client.query('BEGIN'); // Start a transaction
+    await client.query('BEGIN');
 
-    // Create the order — payment_status starts 'pending' for both COD and eSewa
     const orderResult = await client.query(
-      `INSERT INTO orders (user_id, total, shipping_address, payment_method, payment_status)
-       VALUES ($1, $2, $3, $4, 'pending') RETURNING id`,
-      [userId, total, shippingAddress, paymentMethod]
+      `INSERT INTO orders (user_id, total, shipping_address, payment_method, payment_status, phone, landmark, shipping_zone, shipping_fee)
+       VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8) RETURNING id`,
+      [userId, total, shippingAddress, paymentMethod, phone, landmark || null, shippingZone, shippingFee]
     );
     const orderId = orderResult.rows[0].id;
 
-    // Insert each item, and reduce stock
     for (const item of items) {
       await client.query(
         'INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)',
@@ -46,11 +58,11 @@ router.post('/', authMiddleware, async (req, res) => {
       );
     }
 
-    await client.query('COMMIT'); // Save all changes together
+    await client.query('COMMIT');
 
-    res.json({ orderId, total, paymentMethod });
+    res.json({ orderId, total, subtotal, shippingFee, paymentMethod });
   } catch (err) {
-    await client.query('ROLLBACK'); // Undo everything if something failed
+    await client.query('ROLLBACK');
     console.error(err);
     res.status(500).json({ error: 'Something went wrong placing the order' });
   } finally {
@@ -68,7 +80,6 @@ router.get('/', authMiddleware, async (req, res) => {
 
     const orders = ordersResult.rows;
 
-    // For each order, fetch its items along with product names
     for (const order of orders) {
       const itemsResult = await pool.query(
         `SELECT oi.quantity, oi.price, p.name, p.image_url
