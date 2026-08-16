@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('./db');
 const authMiddleware = require('./authMiddleware');
+const { sendOrderConfirmation } = require('./mailer');
 
 const router = express.Router();
 
@@ -33,7 +34,6 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Invalid payment method' });
     }
 
-    // Calculate subtotal + shipping fee on the SERVER (never trust totals sent from the frontend)
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_ZONES[shippingZone].fee;
     const total = subtotal + shippingFee;
@@ -58,7 +58,26 @@ router.post('/', authMiddleware, async (req, res) => {
       );
     }
 
+    // Get the user's name/email for the confirmation email
+    const userResult = await client.query('SELECT name, email FROM users WHERE id = $1', [userId]);
+    const customer = userResult.rows[0];
+
     await client.query('COMMIT');
+
+    // Send confirmation email (fire-and-forget — won't block or fail the order response)
+    sendOrderConfirmation({
+      id: orderId,
+      customerName: customer.name,
+      customerEmail: customer.email,
+      items,
+      subtotal: subtotal.toFixed(2),
+      shippingFee: shippingFee.toFixed(2),
+      total: total.toFixed(2),
+      shippingAddress,
+      landmark,
+      phone,
+      paymentMethod,
+    });
 
     res.json({ orderId, total, subtotal, shippingFee, paymentMethod });
   } catch (err) {
