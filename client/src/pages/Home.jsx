@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 function Home() {
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
+
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -18,11 +21,11 @@ function Home() {
 
   useEffect(() => {
     setLoading(true);
-    const url = selectedCategory
-      ? `${API_URL}/api/products?category_id=${selectedCategory}`
-      : `${API_URL}/api/products`;
+    const params = new URLSearchParams();
+    if (selectedCategory) params.set('category_id', selectedCategory);
+    if (searchQuery) params.set('search', searchQuery);
 
-    fetch(url)
+    fetch(`${API_URL}/api/products?${params.toString()}`)
       .then((res) => res.json())
       .then((data) => {
         setProducts(data);
@@ -32,7 +35,7 @@ function Home() {
         console.error('Error fetching products:', err);
         setLoading(false);
       });
-  }, [selectedCategory]);
+  }, [selectedCategory, searchQuery]);
 
   return (
     <div style={{ backgroundColor: '#F4F6F8', minHeight: '100vh' }}>
@@ -46,23 +49,29 @@ function Home() {
         }
       `}</style>
 
-      {/* Hero banner */}
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #0B2A4A, #123B63)',
-          color: 'white',
-          padding: '40px 24px',
-          textAlign: 'center',
-        }}
-      >
-        <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 700 }}>Everything you need, in one place</h1>
-        <p style={{ margin: '8px 0 0', color: '#B8C4D0', fontSize: '15px' }}>
-          Books · Stationery · Gifts · Music · Sports
-        </p>
-      </div>
+      {!searchQuery && (
+        <div
+          style={{
+            background: 'linear-gradient(135deg, #0B2A4A, #123B63)',
+            color: 'white',
+            padding: '40px 24px',
+            textAlign: 'center',
+          }}
+        >
+          <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 700 }}>Everything you need, in one place</h1>
+          <p style={{ margin: '8px 0 0', color: '#B8C4D0', fontSize: '15px' }}>
+            Books · Stationery · Gifts · Music · Sports
+          </p>
+        </div>
+      )}
 
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px' }}>
-        {/* Category filter pills */}
+        {searchQuery && (
+          <h2 style={{ color: '#0B2A4A', fontSize: '20px', margin: '0 0 16px' }}>
+            Search results for "{searchQuery}"
+          </h2>
+        )}
+
         <div style={{ display: 'flex', gap: '10px', marginBottom: '28px', flexWrap: 'wrap' }}>
           <button
             onClick={() => setSelectedCategory(null)}
@@ -101,7 +110,6 @@ function Home() {
           ))}
         </div>
 
-        {/* Product grid */}
         {loading ? (
           <p style={{ color: '#5C7186' }}>Loading products...</p>
         ) : (
@@ -166,7 +174,7 @@ function Home() {
               </Link>
             ))}
             {products.length === 0 && (
-              <p style={{ color: '#5C7186' }}>No products in this category yet.</p>
+              <p style={{ color: '#5C7186' }}>No products found.</p>
             )}
           </div>
         )}

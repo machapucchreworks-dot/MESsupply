@@ -1,10 +1,13 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from './context/CartContext';
 import { useAuth } from './context/AuthContext';
 
 function Navbar() {
   const { cartItems } = useCart();
   const { user, logout } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const linkStyle = {
@@ -12,6 +15,11 @@ function Navbar() {
     textDecoration: 'none',
     fontSize: '15px',
     fontWeight: 500,
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    navigate(`/?search=${encodeURIComponent(searchQuery)}`);
   };
 
   return (
@@ -24,11 +32,48 @@ function Navbar() {
         backgroundColor: '#0B2A4A',
         color: 'white',
         boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+        gap: '20px',
+        flexWrap: 'wrap',
       }}
     >
       <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
         <img src="/logo.svg" alt="MESsupply" style={{ height: '40px' }} />
       </Link>
+
+      <form
+        onSubmit={handleSearch}
+        style={{ flex: '1 1 260px', maxWidth: '420px', display: 'flex' }}
+      >
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search products..."
+          style={{
+            flex: 1,
+            padding: '9px 14px',
+            border: 'none',
+            borderRadius: '6px 0 0 6px',
+            fontSize: '14px',
+            outline: 'none',
+          }}
+        />
+        <button
+          type="submit"
+          style={{
+            padding: '9px 16px',
+            backgroundColor: '#FF5A00',
+            color: 'white',
+            border: 'none',
+            borderRadius: '0 6px 6px 0',
+            cursor: 'pointer',
+            fontWeight: 600,
+            fontSize: '14px',
+          }}
+        >
+          Search
+        </button>
+      </form>
 
       <div style={{ display: 'flex', gap: '22px', alignItems: 'center' }}>
         <Link to="/cart" style={linkStyle}>

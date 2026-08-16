@@ -38,14 +38,23 @@ app.get('/', (req, res) => {
 // Get all products (optionally filtered by category)
 app.get('/api/products', async (req, res) => {
   try {
-    const { category_id } = req.query;
+    const { category_id, search } = req.query;
 
     let query = 'SELECT * FROM products';
+    let conditions = [];
     let params = [];
 
     if (category_id) {
-      query += ' WHERE category_id = $1';
       params.push(category_id);
+      conditions.push(`category_id = $${params.length}`);
+    }
+    if (search) {
+      params.push(`%${search}%`);
+      conditions.push(`name ILIKE $${params.length}`);
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
     }
 
     query += ' ORDER BY id';
