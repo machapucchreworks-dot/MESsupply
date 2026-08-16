@@ -67,8 +67,64 @@ router.delete('/products/:id', async (req, res) => {
     res.json({ message: 'Product deleted' });
   } catch (err) {
     console.error(err);
-    // This happens if the product is referenced by existing orders
     res.status(400).json({ error: 'Cannot delete this product — it may be part of an existing order. Try setting stock to 0 instead.' });
+  }
+});
+
+// Get all orders (admin only)
+router.get('/orders', async (req, res) => {
+  try {
+    const ordersResult = await pool.query(
+      `SELECT o.*, u.name as customer_name, u.email as customer_email
+       FROM orders o
+       JOIN users u ON o.user_id = u.id
+       ORDER BY o.created_at DESC`
+    );
+
+    const orders = ordersResult.rows;
+
+    for (const order of orders) {
+      const itemsResult = await pool.query(
+        `SELECT oi.quantity, oi.price, p.name
+         FROM order_items oi
+         JOIN products p ON oi.product_id = p.id
+         WHERE oi.order_id = $1`,
+        [order.id]
+      );
+      order.items = itemsResult.rows;
+    }
+
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Something went wrong fetching orders' });
+  }
+});
+
+// Update order status (admin only)
+router.put('/orders/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const result = await pool.query(
+      'UPDATE orders SET status = $1 WHERE id = $2 RETURNING *',
+      [status, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Something went wrong updating the order' });
   }
 });
 
