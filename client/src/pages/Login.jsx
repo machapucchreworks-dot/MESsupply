@@ -4,6 +4,23 @@ import { useAuth } from '../context/AuthContext';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+const inputStyle = {
+  width: '100%',
+  padding: '11px',
+  border: '1px solid #E5E9ED',
+  borderRadius: '8px',
+  fontSize: '14px',
+  fontFamily: 'inherit',
+};
+
+const labelStyle = {
+  display: 'block',
+  fontWeight: 600,
+  color: '#0B2A4A',
+  fontSize: '13px',
+  marginBottom: '6px',
+};
+
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,37 +55,78 @@ function Login() {
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '400px', margin: '0 auto' }}>
-      <h1>Login</h1>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '10px' }}>
-          <label>Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px' }}
-          />
-        </div>
-        <div style={{ marginBottom: '10px' }}>
-          <label>Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px' }}
-          />
-        </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit" style={{ padding: '10px 20px' }}>
-          Login
-        </button>
-      </form>
-      <p>
-        Don't have an account? <Link to="/register">Register</Link>
-      </p>
+    <div
+      style={{
+        backgroundColor: '#F4F6F8',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          padding: '36px',
+          width: '100%',
+          maxWidth: '380px',
+          boxShadow: '0 4px 16px rgba(11,42,74,0.08)',
+        }}
+      >
+        <h1 style={{ color: '#0B2A4A', fontSize: '24px', margin: '0 0 4px', textAlign: 'center' }}>
+          Welcome back
+        </h1>
+        <p style={{ color: '#5C7186', fontSize: '14px', textAlign: 'center', margin: '0 0 24px' }}>
+          Log in to your MESsupply account
+        </p>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '16px' }}>
+            <label style={labelStyle}>Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={inputStyle}
+            />
+          </div>
+          <div style={{ marginBottom: '16px' }}>
+            <label style={labelStyle}>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={inputStyle}
+            />
+          </div>
+          {error && <p style={{ color: '#D93636', fontSize: '13px', marginBottom: '12px' }}>{error}</p>}
+          <button
+            type="submit"
+            style={{
+              width: '100%',
+              padding: '13px',
+              backgroundColor: '#FF5A00',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '15px',
+              fontWeight: 700,
+            }}
+          >
+            Login
+          </button>
+        </form>
+        <p style={{ textAlign: 'center', fontSize: '13px', color: '#5C7186', marginTop: '20px' }}>
+          Don't have an account?{' '}
+          <Link to="/register" style={{ color: '#FF5A00', fontWeight: 600, textDecoration: 'none' }}>
+            Register
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
