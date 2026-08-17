@@ -1,17 +1,7 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 require('dotenv').config();
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  requireTLS: true,
-  family: 4, // force IPv4 — Render's network can't reach Gmail over IPv6
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});;
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendOrderConfirmation(order) {
   try {
@@ -25,8 +15,8 @@ async function sendOrderConfirmation(order) {
       )
       .join('');
 
-    await transporter.sendMail({
-      from: `"MESsupply" <${process.env.EMAIL_USER}>`,
+    await resend.emails.send({
+      from: 'MESsupply <onboarding@resend.dev>',
       to: order.customerEmail,
       subject: `Order Confirmed — #${order.id}`,
       html: `
@@ -59,7 +49,6 @@ async function sendOrderConfirmation(order) {
     });
   } catch (err) {
     console.error('Failed to send order confirmation email:', err);
-    // We don't throw — a failed email shouldn't break order placement
   }
 }
 
