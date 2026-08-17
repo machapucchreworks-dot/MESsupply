@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useToast } from '../context/ToastContext';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -9,6 +10,7 @@ function ProductDetail() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetch(`${API_URL}/api/products/${id}`)
@@ -35,6 +37,11 @@ function ProductDetail() {
         <p style={{ color: '#5C7186' }}>Product not found.</p>
       </div>
     );
+
+  const handleAddToCart = () => {
+    addToCart(product);
+    showToast(`${product.name} added to cart`);
+  };
 
   return (
     <div style={{ backgroundColor: '#F4F6F8', minHeight: '100vh' }}>
@@ -109,7 +116,7 @@ function ProductDetail() {
               {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
             </p>
             <button
-              onClick={() => addToCart(product)}
+              onClick={handleAddToCart}
               disabled={product.stock === 0}
               style={{
                 padding: '13px 32px',
