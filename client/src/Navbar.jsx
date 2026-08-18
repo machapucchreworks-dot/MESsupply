@@ -23,105 +23,141 @@ function Navbar() {
   };
 
   return (
-    <nav
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '12px 24px',
-        backgroundColor: '#0B2A4A',
-        color: 'white',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-        gap: '20px',
-        flexWrap: 'wrap',
-      }}
-    >
-      <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-        <img src="/logo.svg" alt="MESsupply" style={{ height: '40px' }} />
-      </Link>
-
-      <form
-        onSubmit={handleSearch}
-        style={{ flex: '1 1 260px', maxWidth: '420px', display: 'flex' }}
+    <>
+      {/* Top info bar */}
+      <div
+        style={{
+          backgroundColor: '#08213A',
+          color: '#B8C4D0',
+          padding: '6px 24px',
+          fontSize: '12px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '8px',
+        }}
       >
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search products..."
-          style={{
-            flex: 1,
-            padding: '9px 14px',
-            border: 'none',
-            borderRadius: '6px 0 0 6px',
-            fontSize: '14px',
-            outline: 'none',
-          }}
-        />
-        <button
-          type="submit"
-          style={{
-            padding: '9px 16px',
-            backgroundColor: '#FF5A00',
-            color: 'white',
-            border: 'none',
-            borderRadius: '0 6px 6px 0',
-            cursor: 'pointer',
-            fontWeight: 600,
-            fontSize: '14px',
-          }}
-        >
-          Search
-        </button>
-      </form>
+        <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap' }}>
+          <span>📞 +977-9866963219</span>
+          <span>✉️ machapucchreworks@gmail.com</span>
+        </div>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <Link to="/contact" style={{ color: '#B8C4D0', textDecoration: 'none' }}>
+            Facebook
+          </Link>
+          <Link to="/contact" style={{ color: '#B8C4D0', textDecoration: 'none' }}>
+            Instagram
+          </Link>
+        </div>
+      </div>
 
-      <div style={{ display: 'flex', gap: '22px', alignItems: 'center' }}>
-        <Link to="/cart" style={linkStyle}>
-          Cart ({itemCount})
+      <nav
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '12px 24px',
+          backgroundColor: '#0B2A4A',
+          color: 'white',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          gap: '20px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <img src="/logo.svg" alt="MESsupply" style={{ height: '40px' }} />
         </Link>
-        {user ? (
-          <>
-            <Link to="/orders" style={linkStyle}>
-              Orders
-            </Link>
-            {user.is_admin && (
-              <Link to="/admin" style={linkStyle}>
-                Admin
-              </Link>
-            )}
-            <span style={{ fontSize: '14px', color: '#B8C4D0' }}>Hi, {user.name}</span>
-            <button
-              onClick={logout}
-              style={{
-                cursor: 'pointer',
-                backgroundColor: '#FF5A00',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '6px',
-                fontWeight: 600,
-                fontSize: '14px',
-              }}
-            >
-              Logout
-            </button>
-          </>
-        ) : (
-          <Link
-            to="/login"
+
+        <form
+          onSubmit={handleSearch}
+          style={{ flex: '1 1 260px', maxWidth: '420px', display: 'flex' }}
+        >
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search products..."
             style={{
-              ...linkStyle,
+              flex: 1,
+              padding: '9px 14px',
+              border: 'none',
+              borderRadius: '6px 0 0 6px',
+              fontSize: '14px',
+              outline: 'none',
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              padding: '9px 16px',
               backgroundColor: '#FF5A00',
-              padding: '8px 18px',
-              borderRadius: '6px',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0 6px 6px 0',
+              cursor: 'pointer',
               fontWeight: 600,
+              fontSize: '14px',
             }}
           >
-            Login
+            Search
+          </button>
+        </form>
+
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+          <Link to="/about" style={linkStyle}>
+            About
           </Link>
-        )}
-      </div>
-    </nav>
+          <Link to="/contact" style={linkStyle}>
+            Contact
+          </Link>
+          <Link to="/cart" style={linkStyle}>
+            Cart ({itemCount})
+          </Link>
+          {user ? (
+            <>
+              <Link to="/orders" style={linkStyle}>
+                Orders
+              </Link>
+              {user.is_admin && (
+                <Link to="/admin" style={linkStyle}>
+                  Admin
+                </Link>
+              )}
+              <span style={{ fontSize: '14px', color: '#B8C4D0' }}>Hi, {user.name}</span>
+              <button
+                onClick={logout}
+                style={{
+                  cursor: 'pointer',
+                  backgroundColor: '#FF5A00',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                }}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/login"
+              style={{
+                ...linkStyle,
+                backgroundColor: '#FF5A00',
+                padding: '8px 18px',
+                borderRadius: '6px',
+                fontWeight: 600,
+              }}
+            >
+              Login
+            </Link>
+          )}
+        </div>
+      </nav>
+    </>
   );
 }
 

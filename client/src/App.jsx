@@ -12,6 +12,8 @@ import Checkout from './pages/Checkout';
 import OrderSuccess from './pages/OrderSuccess';
 import Orders from './pages/Orders';
 import Admin from './pages/Admin';
+import About from './pages/About';
+import Contact from './pages/Contact';
 
 function App() {
   return (
@@ -30,6 +32,8 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
             </Routes>
           </BrowserRouter>
         </ToastProvider>

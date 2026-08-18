@@ -37,6 +37,8 @@ function Home() {
       });
   }, [selectedCategory, searchQuery]);
 
+  const selectedCategoryName = categories.find((c) => c.id === selectedCategory)?.name;
+
   return (
     <div style={{ backgroundColor: '#F4F6F8', minHeight: '100vh' }}>
       <style>{`
@@ -46,6 +48,9 @@ function Home() {
         .product-card:hover {
           transform: translateY(-4px);
           box-shadow: 0 12px 24px rgba(11,42,74,0.12);
+        }
+        .sidebar-item:hover {
+          background-color: #F4F6F8;
         }
       `}</style>
 
@@ -65,119 +70,144 @@ function Home() {
         </div>
       )}
 
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px' }}>
-        {searchQuery && (
-          <h2 style={{ color: '#0B2A4A', fontSize: '20px', margin: '0 0 16px' }}>
-            Search results for "{searchQuery}"
-          </h2>
-        )}
-
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '28px', flexWrap: 'wrap' }}>
-          <button
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px', display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+        {/* Sidebar */}
+        <aside
+          style={{
+            width: '220px',
+            flexShrink: 0,
+            backgroundColor: 'white',
+            borderRadius: '10px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+            overflow: 'hidden',
+            position: 'sticky',
+            top: '24px',
+          }}
+        >
+          <div style={{ backgroundColor: '#0B2A4A', color: 'white', padding: '14px 18px', fontWeight: 700, fontSize: '14px' }}>
+            CATEGORIES
+          </div>
+          <div
+            className="sidebar-item"
             onClick={() => setSelectedCategory(null)}
             style={{
-              padding: '9px 18px',
-              border: 'none',
-              backgroundColor: selectedCategory === null ? '#FF5A00' : 'white',
-              color: selectedCategory === null ? 'white' : '#0B2A4A',
-              borderRadius: '999px',
+              padding: '12px 18px',
               cursor: 'pointer',
-              fontWeight: 600,
+              fontWeight: selectedCategory === null ? 700 : 500,
+              color: selectedCategory === null ? '#FF5A00' : '#0B2A4A',
+              borderBottom: '1px solid #F0F2F4',
               fontSize: '14px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
             }}
           >
-            All
-          </button>
+            All Products
+          </div>
           {categories.map((cat) => (
-            <button
+            <div
               key={cat.id}
+              className="sidebar-item"
               onClick={() => setSelectedCategory(cat.id)}
               style={{
-                padding: '9px 18px',
-                border: 'none',
-                backgroundColor: selectedCategory === cat.id ? '#FF5A00' : 'white',
-                color: selectedCategory === cat.id ? 'white' : '#0B2A4A',
-                borderRadius: '999px',
+                padding: '12px 18px',
                 cursor: 'pointer',
-                fontWeight: 600,
+                fontWeight: selectedCategory === cat.id ? 700 : 500,
+                color: selectedCategory === cat.id ? '#FF5A00' : '#0B2A4A',
+                borderBottom: '1px solid #F0F2F4',
                 fontSize: '14px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
               }}
             >
               {cat.name}
-            </button>
+            </div>
           ))}
-        </div>
+        </aside>
 
-        {loading ? (
-          <p style={{ color: '#5C7186' }}>Loading products...</p>
-        ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
-              gap: '20px',
-            }}
-          >
-            {products.map((product) => (
-              <Link
-                key={product.id}
-                to={`/product/${product.id}`}
-                style={{ textDecoration: 'none', color: 'inherit' }}
-              >
-                <div
-                  className="product-card"
-                  style={{
-                    backgroundColor: 'white',
-                    border: '1px solid #E5E9ED',
-                    borderRadius: '10px',
-                    padding: '14px',
-                    height: '100%',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '100%',
-                      aspectRatio: '1 / 1',
-                      overflow: 'hidden',
-                      borderRadius: '8px',
-                      backgroundColor: '#F4F6F8',
-                      marginBottom: '10px',
-                    }}
-                  >
-                    <img
-                      src={product.image_url}
-                      alt={product.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  </div>
-                  <h3
-                    style={{
-                      margin: '0 0 6px',
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      color: '#0B2A4A',
-                      lineHeight: 1.3,
-                    }}
-                  >
-                    {product.name}
-                  </h3>
-                  <p style={{ margin: '0 0 4px', color: '#FF5A00', fontWeight: 700, fontSize: '16px' }}>
-                    Rs. {product.price}
-                  </p>
-                  <p style={{ margin: 0, color: '#5C7186', fontSize: '13px' }}>
-                    {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-                  </p>
-                </div>
-              </Link>
-            ))}
-            {products.length === 0 && (
-              <p style={{ color: '#5C7186' }}>No products found.</p>
+        {/* Main content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Breadcrumb */}
+          <div style={{ fontSize: '13px', color: '#5C7186', marginBottom: '14px' }}>
+            <span>Products</span>
+            {selectedCategoryName && (
+              <>
+                <span style={{ margin: '0 6px' }}>›</span>
+                <span style={{ color: '#0B2A4A', fontWeight: 600 }}>{selectedCategoryName}</span>
+              </>
             )}
           </div>
-        )}
+
+          {searchQuery && (
+            <h2 style={{ color: '#0B2A4A', fontSize: '20px', margin: '0 0 16px' }}>
+              Search results for "{searchQuery}"
+            </h2>
+          )}
+
+          {loading ? (
+            <p style={{ color: '#5C7186' }}>Loading products...</p>
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: '20px',
+              }}
+            >
+              {products.map((product) => (
+                <Link
+                  key={product.id}
+                  to={`/product/${product.id}`}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <div
+                    className="product-card"
+                    style={{
+                      backgroundColor: 'white',
+                      border: '1px solid #E5E9ED',
+                      borderRadius: '10px',
+                      padding: '14px',
+                      height: '100%',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '100%',
+                        aspectRatio: '1 / 1',
+                        overflow: 'hidden',
+                        borderRadius: '8px',
+                        backgroundColor: '#F4F6F8',
+                        marginBottom: '10px',
+                      }}
+                    >
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    </div>
+                    <h3
+                      style={{
+                        margin: '0 0 6px',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: '#0B2A4A',
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {product.name}
+                    </h3>
+                    <p style={{ margin: '0 0 4px', color: '#FF5A00', fontWeight: 700, fontSize: '16px' }}>
+                      Rs. {product.price}
+                    </p>
+                    <p style={{ margin: 0, color: '#5C7186', fontSize: '13px' }}>
+                      {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+              {products.length === 0 && (
+                <p style={{ color: '#5C7186' }}>No products found.</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
