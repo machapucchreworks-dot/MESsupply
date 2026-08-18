@@ -52,25 +52,26 @@ function Home() {
         .sidebar-item:hover {
           background-color: #F4F6F8;
         }
+        .desktop-sidebar { display: block; }
+        .mobile-chips { display: none; }
+        .product-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 20px;
+        }
+        @media (max-width: 768px) {
+          .desktop-sidebar { display: none; }
+          .mobile-chips { display: flex; }
+          .home-layout { flex-direction: column; }
+          .product-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+          }
+        }
         .home-layout {
           display: flex;
           gap: 24px;
           align-items: flex-start;
-        }
-        .home-sidebar {
-          width: 220px;
-          flex-shrink: 0;
-          position: sticky;
-          top: 24px;
-        }
-        @media (max-width: 768px) {
-          .home-layout {
-            flex-direction: column;
-          }
-          .home-sidebar {
-            width: 100%;
-            position: static;
-          }
         }
       `}</style>
 
@@ -79,27 +80,82 @@ function Home() {
           style={{
             background: 'linear-gradient(135deg, #0B2A4A, #123B63)',
             color: 'white',
-            padding: '40px 24px',
+            padding: '32px 20px',
             textAlign: 'center',
           }}
         >
-          <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 700 }}>Everything you need, in one place</h1>
-          <p style={{ margin: '8px 0 0', color: '#B8C4D0', fontSize: '15px' }}>
+          <h1 style={{ margin: 0, fontSize: '26px', fontWeight: 700 }}>Everything you need, in one place</h1>
+          <p style={{ margin: '8px 0 0', color: '#B8C4D0', fontSize: '14px' }}>
             Books · Stationery · Gifts · Music · Sports
           </p>
         </div>
       )}
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
-        <div className="home-layout">
-          {/* Sidebar */}
-          <aside
-            className="home-sidebar"
+      {/* Mobile category chip strip */}
+      <div
+        className="mobile-chips"
+        style={{
+          overflowX: 'auto',
+          gap: '8px',
+          padding: '12px 16px',
+          backgroundColor: 'white',
+          borderBottom: '1px solid #E5E9ED',
+        }}
+      >
+        <button
+          onClick={() => setSelectedCategory(null)}
+          style={{
+            padding: '7px 14px',
+            border: 'none',
+            backgroundColor: selectedCategory === null ? '#FF5A00' : '#F4F6F8',
+            color: selectedCategory === null ? 'white' : '#0B2A4A',
+            borderRadius: '999px',
+            cursor: 'pointer',
+            fontWeight: 600,
+            fontSize: '13px',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
+        >
+          All
+        </button>
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setSelectedCategory(cat.id)}
             style={{
+              padding: '7px 14px',
+              border: 'none',
+              backgroundColor: selectedCategory === cat.id ? '#FF5A00' : '#F4F6F8',
+              color: selectedCategory === cat.id ? 'white' : '#0B2A4A',
+              borderRadius: '999px',
+              cursor: 'pointer',
+              fontWeight: 600,
+              fontSize: '13px',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              marginLeft: '8px',
+            }}
+          >
+            {cat.name}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px 16px' }}>
+        <div className="home-layout">
+          {/* Desktop sidebar */}
+          <aside
+            className="desktop-sidebar"
+            style={{
+              width: '220px',
+              flexShrink: 0,
               backgroundColor: 'white',
               borderRadius: '10px',
               boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
               overflow: 'hidden',
+              position: 'sticky',
+              top: '24px',
             }}
           >
             <div style={{ backgroundColor: '#0B2A4A', color: 'white', padding: '14px 18px', fontWeight: 700, fontSize: '14px' }}>
@@ -140,7 +196,7 @@ function Home() {
 
           {/* Main content */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '13px', color: '#5C7186', marginBottom: '14px' }}>
+            <div style={{ fontSize: '13px', color: '#5C7186', marginBottom: '12px' }}>
               <span>Products</span>
               {selectedCategoryName && (
                 <>
@@ -151,7 +207,7 @@ function Home() {
             </div>
 
             {searchQuery && (
-              <h2 style={{ color: '#0B2A4A', fontSize: '20px', margin: '0 0 16px' }}>
+              <h2 style={{ color: '#0B2A4A', fontSize: '18px', margin: '0 0 12px' }}>
                 Search results for "{searchQuery}"
               </h2>
             )}
@@ -159,13 +215,7 @@ function Home() {
             {loading ? (
               <p style={{ color: '#5C7186' }}>Loading products...</p>
             ) : (
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                  gap: '16px',
-                }}
-              >
+              <div className="product-grid">
                 {products.map((product) => (
                   <Link
                     key={product.id}
@@ -178,7 +228,7 @@ function Home() {
                         backgroundColor: 'white',
                         border: '1px solid #E5E9ED',
                         borderRadius: '10px',
-                        padding: '14px',
+                        padding: '10px',
                         height: '100%',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                       }}
@@ -190,7 +240,7 @@ function Home() {
                           overflow: 'hidden',
                           borderRadius: '8px',
                           backgroundColor: '#F4F6F8',
-                          marginBottom: '10px',
+                          marginBottom: '8px',
                         }}
                       >
                         <img
@@ -201,19 +251,24 @@ function Home() {
                       </div>
                       <h3
                         style={{
-                          margin: '0 0 6px',
-                          fontSize: '14px',
+                          margin: '0 0 4px',
+                          fontSize: '13px',
                           fontWeight: 600,
                           color: '#0B2A4A',
                           lineHeight: 1.3,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
                         }}
                       >
                         {product.name}
                       </h3>
-                      <p style={{ margin: '0 0 4px', color: '#FF5A00', fontWeight: 700, fontSize: '16px' }}>
+                      <p style={{ margin: '0 0 2px', color: '#FF5A00', fontWeight: 700, fontSize: '14px' }}>
                         Rs. {product.price}
                       </p>
-                      <p style={{ margin: 0, color: '#5C7186', fontSize: '13px' }}>
+                      <p style={{ margin: 0, color: '#5C7186', fontSize: '11px' }}>
                         {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
                       </p>
                     </div>
