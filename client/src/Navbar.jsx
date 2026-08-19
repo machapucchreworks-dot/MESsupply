@@ -38,9 +38,13 @@ function Navbar() {
           gap: '8px',
         }}
       >
-        <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap' }}>
-          <span>📞 +977-9866963219</span>
-          <span>✉️ machapucchreworks@gmail.com</span>
+              <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap' }}>
+          <a href="tel:+9779866963219" style={{ color: '#B8C4D0', textDecoration: 'none' }}>
+            📞 +977-9866963219
+          </a>
+          <a href="mailto:machapucchreworks@gmail.com" style={{ color: '#B8C4D0', textDecoration: 'none' }}>
+            ✉️ machapucchreworks@gmail.com
+          </a>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
           <Link to="/contact" style={{ color: '#B8C4D0', textDecoration: 'none' }}>
