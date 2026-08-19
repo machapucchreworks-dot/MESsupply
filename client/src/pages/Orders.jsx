@@ -4,6 +4,73 @@ import { useAuth } from '../context/AuthContext';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+const STEPS = ['pending', 'processing', 'shipped', 'delivered'];
+const STEP_LABELS = { pending: 'Order Placed', processing: 'Processing', shipped: 'Shipped', delivered: 'Delivered' };
+
+function TrackingBar({ status }) {
+  if (status === 'cancelled') {
+    return (
+      <div style={{ padding: '10px 0', color: '#D93636', fontWeight: 700, fontSize: '13px' }}>
+        ✕ Order Cancelled
+      </div>
+    );
+  }
+
+  const currentIndex = STEPS.indexOf(status);
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', padding: '14px 0 6px' }}>
+      {STEPS.map((step, idx) => {
+        const done = idx <= currentIndex;
+        return (
+          <div key={step} style={{ display: 'flex', alignItems: 'center', flex: idx < STEPS.length - 1 ? 1 : 'initial' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '60px' }}>
+              <div
+                style={{
+                  width: '22px',
+                  height: '22px',
+                  borderRadius: '50%',
+                  backgroundColor: done ? '#FF5A00' : '#E5E9ED',
+                  color: done ? 'white' : '#5C7186',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  flexShrink: 0,
+                }}
+              >
+                {done ? '✓' : idx + 1}
+              </div>
+              <span
+                style={{
+                  fontSize: '10px',
+                  color: done ? '#0B2A4A' : '#9AA6B2',
+                  fontWeight: done ? 700 : 500,
+                  marginTop: '4px',
+                  textAlign: 'center',
+                }}
+              >
+                {STEP_LABELS[step]}
+              </span>
+            </div>
+            {idx < STEPS.length - 1 && (
+              <div
+                style={{
+                  flex: 1,
+                  height: '2px',
+                  backgroundColor: idx < currentIndex ? '#FF5A00' : '#E5E9ED',
+                  margin: '0 4px 16px',
+                }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function Orders() {
   const { user, token } = useAuth();
   const [orders, setOrders] = useState([]);
@@ -74,31 +141,23 @@ function Orders() {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <strong style={{ color: '#0B2A4A' }}>Order #{order.id}</strong>
-            <span
-              style={{
-                textTransform: 'capitalize',
-                fontSize: '12px',
-                fontWeight: 700,
-                padding: '4px 10px',
-                borderRadius: '999px',
-                backgroundColor: '#FFF3EB',
-                color: '#FF5A00',
-              }}
-            >
-              {order.status}
+            <span style={{ color: '#5C7186', fontSize: '13px' }}>
+              {new Date(order.created_at).toLocaleDateString()}
             </span>
           </div>
-          <p style={{ color: '#5C7186', fontSize: '13px', margin: '4px 0 12px' }}>
-            {new Date(order.created_at).toLocaleDateString()}
-          </p>
 
-          {order.items.map((item, idx) => (
-            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '8px 0' }}>
-              <img src={item.image_url} alt={item.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} />
-              <span style={{ fontSize: '14px', color: '#0B2A4A' }}>{item.name} x {item.quantity}</span>
-              <span style={{ marginLeft: 'auto', fontSize: '14px', fontWeight: 600, color: '#0B2A4A' }}>Rs. {item.price}</span>
-            </div>
-          ))}
+          {/* Delivery tracking */}
+          <TrackingBar status={order.status} />
+
+          <div style={{ borderTop: '1px solid #E5E9ED', paddingTop: '12px' }}>
+            {order.items.map((item, idx) => (
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '8px 0' }}>
+                <img src={item.image_url} alt={item.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} />
+                <span style={{ fontSize: '14px', color: '#0B2A4A' }}>{item.name} x {item.quantity}</span>
+                <span style={{ marginLeft: 'auto', fontSize: '14px', fontWeight: 600, color: '#0B2A4A' }}>Rs. {item.price}</span>
+              </div>
+            ))}
+          </div>
 
           <div style={{ borderTop: '1px solid #E5E9ED', marginTop: '12px', paddingTop: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#5C7186', padding: '2px 0' }}>
