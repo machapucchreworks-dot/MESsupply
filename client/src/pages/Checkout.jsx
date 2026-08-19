@@ -5,10 +5,39 @@ import { useAuth } from '../context/AuthContext';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+const PROVINCES = [
+  'Koshi Province',
+  'Madhesh Province',
+  'Bagmati Province',
+  'Gandaki Province',
+  'Lumbini Province',
+  'Karnali Province',
+  'Sudurpashchim Province',
+];
+
+const DISTRICTS = [
+  'Achham', 'Arghakhanchi', 'Baglung', 'Baitadi', 'Bajhang', 'Bajura', 'Banke',
+  'Bara', 'Bardiya', 'Bhaktapur', 'Bhojpur', 'Chitwan', 'Dadeldhura', 'Dailekh',
+  'Dang', 'Darchula', 'Dhading', 'Dhankuta', 'Dhanusha', 'Dolakha', 'Dolpa',
+  'Doti', 'Gorkha', 'Gulmi', 'Humla', 'Ilam', 'Jajarkot', 'Jhapa', 'Jumla',
+  'Kailali', 'Kalikot', 'Kanchanpur', 'Kapilvastu', 'Kaski', 'Kathmandu',
+  'Kavrepalanchok', 'Khotang', 'Lalitpur', 'Lamjung', 'Mahottari', 'Makwanpur',
+  'Manang', 'Morang', 'Mugu', 'Mustang', 'Myagdi', 'Nawalparasi (Bardaghat Susta East)',
+  'Nawalparasi (Bardaghat Susta West)', 'Nuwakot', 'Okhaldhunga', 'Palpa',
+  'Panchthar', 'Parbat', 'Parsa', 'Pyuthan', 'Ramechhap', 'Rasuwa', 'Rautahat',
+  'Rolpa', 'Rukum East', 'Rukum West', 'Rupandehi', 'Salyan', 'Sankhuwasabha',
+  'Saptari', 'Sarlahi', 'Sindhuli', 'Sindhupalchok', 'Siraha', 'Solukhumbu',
+  'Sunsari', 'Surkhet', 'Syangja', 'Tanahun', 'Taplejung', 'Terhathum',
+  'Udayapur',
+];
+
 function Checkout() {
   const { cartItems, clearCart } = useCart();
   const { user, token } = useAuth();
-  const [shippingAddress, setShippingAddress] = useState('');
+  const [province, setProvince] = useState('Lumbini Province');
+  const [district, setDistrict] = useState('Dang');
+  const [municipality, setMunicipality] = useState('');
+  const [streetAddress, setStreetAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [landmark, setLandmark] = useState('');
   const [shippingZone, setShippingZone] = useState('city');
@@ -16,6 +45,9 @@ function Checkout() {
   const [freeThreshold, setFreeThreshold] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [error, setError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [municipalityError, setMunicipalityError] = useState('');
+  const [streetAddressError, setStreetAddressError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -60,9 +92,68 @@ function Checkout() {
     );
   }
 
+  // Only allow digits in the phone field, and cap at 10 characters
+  const handlePhoneChange = (e) => {
+    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setPhone(digitsOnly);
+    if (phoneError) setPhoneError('');
+  };
+
+  const handleMunicipalityChange = (e) => {
+    setMunicipality(e.target.value);
+    if (municipalityError) setMunicipalityError('');
+  };
+
+  const handleStreetAddressChange = (e) => {
+    setStreetAddress(e.target.value);
+    if (streetAddressError) setStreetAddressError('');
+  };
+
+  // Returns true if valid, false if invalid (and sets the relevant error state)
+  const validateFields = () => {
+    let valid = true;
+
+    if (!/^9\d{9}$/.test(phone)) {
+      setPhoneError('Enter a valid 10-digit phone number starting with 9 (e.g. 98XXXXXXXX)');
+      valid = false;
+    } else {
+      setPhoneError('');
+    }
+
+    const trimmedMunicipality = municipality.trim();
+    if (trimmedMunicipality.length < 3) {
+      setMunicipalityError('Enter your municipality/city name');
+      valid = false;
+    } else {
+      setMunicipalityError('');
+    }
+
+    const trimmedStreet = streetAddress.trim();
+    const hasMultipleWords = trimmedStreet.split(/\s+/).filter(Boolean).length >= 2;
+    if (trimmedStreet.length < 6 || !hasMultipleWords) {
+      setStreetAddressError('Enter your ward number, tole/street name, or house details');
+      valid = false;
+    } else {
+      setStreetAddressError('');
+    }
+
+    return valid;
+  };
+
+  const buildFullAddress = () =>
+    [streetAddress.trim(), municipality.trim(), district, province]
+      .filter(Boolean)
+      .join(', ');
+
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!validateFields()) {
+      setError('Please fix the highlighted fields before placing your order.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -74,7 +165,7 @@ function Checkout() {
         },
         body: JSON.stringify({
           items: cartItems,
-          shippingAddress,
+          shippingAddress: buildFullAddress(),
           phone,
           landmark,
           shippingZone,
@@ -157,14 +248,15 @@ function Checkout() {
     backgroundColor: active ? '#FFF3EB' : 'white',
   });
 
-  const inputStyle = {
+  const inputStyle = (hasError) => ({
     width: '100%',
     padding: '10px',
-    border: '1px solid #E5E9ED',
+    border: `1px solid ${hasError ? '#D93636' : '#E5E9ED'}`,
     borderRadius: '8px',
     fontFamily: 'inherit',
     fontSize: '14px',
-  };
+    boxSizing: 'border-box',
+  });
 
   const labelStyle = {
     display: 'block',
@@ -172,6 +264,20 @@ function Checkout() {
     color: '#0B2A4A',
     marginBottom: '8px',
     fontSize: '14px',
+  };
+
+  const fieldErrorStyle = {
+    color: '#D93636',
+    fontSize: '13px',
+    marginTop: '-14px',
+    marginBottom: '18px',
+  };
+
+  const rowStyle = {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px',
+    marginBottom: '18px',
   };
 
   return pageWrap(
@@ -208,21 +314,65 @@ function Checkout() {
         <label style={labelStyle}>Phone Number</label>
         <input
           type="tel"
+          inputMode="numeric"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          onChange={handlePhoneChange}
           required
           placeholder="98XXXXXXXX"
-          style={{ ...inputStyle, marginBottom: '18px' }}
+          style={{ ...inputStyle(phoneError), marginBottom: phoneError ? '6px' : '18px' }}
         />
+        {phoneError && <p style={fieldErrorStyle}>{phoneError}</p>}
 
-        <label style={labelStyle}>Shipping Address</label>
+        <div style={rowStyle}>
+          <div>
+            <label style={labelStyle}>Province</label>
+            <select
+              value={province}
+              onChange={(e) => setProvince(e.target.value)}
+              required
+              style={inputStyle(false)}
+            >
+              {PROVINCES.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>District</label>
+            <select
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+              required
+              style={inputStyle(false)}
+            >
+              {DISTRICTS.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <label style={labelStyle}>Municipality / City</label>
+        <input
+          type="text"
+          value={municipality}
+          onChange={handleMunicipalityChange}
+          required
+          placeholder="e.g. Tulsipur Sub-Metropolitan City"
+          style={{ ...inputStyle(municipalityError), marginBottom: municipalityError ? '6px' : '18px' }}
+        />
+        {municipalityError && <p style={fieldErrorStyle}>{municipalityError}</p>}
+
+        <label style={labelStyle}>Ward, Street / Area Address</label>
         <textarea
-          value={shippingAddress}
-          onChange={(e) => setShippingAddress(e.target.value)}
+          value={streetAddress}
+          onChange={handleStreetAddressChange}
           required
           rows="3"
-          style={{ ...inputStyle, marginBottom: '18px' }}
+          placeholder="e.g. Ward 5, Main Road, near XYZ"
+          style={{ ...inputStyle(streetAddressError), marginBottom: streetAddressError ? '6px' : '18px' }}
         />
+        {streetAddressError && <p style={fieldErrorStyle}>{streetAddressError}</p>}
 
         <label style={labelStyle}>Nearest Landmark (optional)</label>
         <input
@@ -230,7 +380,7 @@ function Checkout() {
           value={landmark}
           onChange={(e) => setLandmark(e.target.value)}
           placeholder="e.g. Near Ghorahi Chowk"
-          style={{ ...inputStyle, marginBottom: '18px' }}
+          style={{ ...inputStyle(false), marginBottom: '18px' }}
         />
 
         <label style={labelStyle}>Delivery Zone</label>
@@ -238,7 +388,7 @@ function Checkout() {
           value={shippingZone}
           onChange={(e) => setShippingZone(e.target.value)}
           required
-          style={{ ...inputStyle, marginBottom: '18px' }}
+          style={{ ...inputStyle(false), marginBottom: '18px' }}
         >
           {Object.entries(zones).map(([key, zone]) => (
             <option key={key} value={key}>
