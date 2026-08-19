@@ -38,7 +38,7 @@ function Navbar() {
           gap: '8px',
         }}
       >
-              <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap' }}>
           <a href="tel:+9779866963219" style={{ color: '#B8C4D0', textDecoration: 'none' }}>
             📞 +977-9866963219
           </a>
@@ -115,7 +115,7 @@ function Navbar() {
           <Link to="/contact" style={linkStyle}>
             Contact
           </Link>
-                    <Link
+          <Link
             to="/cart"
             style={{ ...linkStyle, display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}
           >
@@ -151,7 +151,20 @@ function Navbar() {
                   Admin
                 </Link>
               )}
-              <span style={{ fontSize: '14px', color: '#B8C4D0' }}>Hi, {user.name}</span>
+              <span
+                title={`Hi, ${user.name}`}
+                style={{
+                  fontSize: '14px',
+                  color: '#B8C4D0',
+                  maxWidth: '140px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  display: 'inline-block',
+                }}
+              >
+                Hi, {user.name}
+              </span>
               <button
                 onClick={logout}
                 style={{

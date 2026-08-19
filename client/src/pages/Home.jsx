@@ -79,15 +79,50 @@ function Home() {
         <div
           style={{
             background: 'linear-gradient(135deg, #0B2A4A, #123B63)',
+            backgroundImage: `linear-gradient(135deg, #0B2A4A, #123B63), radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)`,
+            backgroundSize: 'auto, 22px 22px',
             color: 'white',
-            padding: '32px 20px',
+            padding: '48px 20px 40px',
             textAlign: 'center',
           }}
         >
-          <h1 style={{ margin: 0, fontSize: '26px', fontWeight: 700 }}>Everything you need, in one place</h1>
-          <p style={{ margin: '8px 0 0', color: '#B8C4D0', fontSize: '14px' }}>
+          <h1 style={{ margin: 0, fontSize: '30px', fontWeight: 700 }}>Everything you need, in one place</h1>
+          <p style={{ margin: '10px 0 0', color: '#B8C4D0', fontSize: '15px' }}>
             Books · Stationery · Gifts · Music · Sports
           </p>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              gap: '12px',
+              marginTop: '22px',
+            }}
+          >
+            {[
+              { icon: '🚚', text: 'Free shipping above Rs. 2000' },
+              { icon: '💵', text: 'Cash on Delivery' },
+              { icon: '📦', text: 'Fast delivery across Tulsipur' },
+            ].map((badge) => (
+              <div
+                key={badge.text}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  borderRadius: '999px',
+                  padding: '6px 14px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                }}
+              >
+                <span>{badge.icon}</span>
+                <span>{badge.text}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
