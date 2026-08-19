@@ -2,13 +2,12 @@ const express = require('express');
 const pool = require('./db');
 const authMiddleware = require('./authMiddleware');
 const adminMiddleware = require('./adminMiddleware');
+const { sendStatusUpdate } = require('./mailer');
 
 const router = express.Router();
 
-// All routes below require: logged in AND admin
 router.use(authMiddleware, adminMiddleware);
 
-// Create a new product
 router.post('/products', async (req, res) => {
   try {
     const { name, description, price, stock, image_url, category_id } = req.body;
@@ -30,7 +29,6 @@ router.post('/products', async (req, res) => {
   }
 });
 
-// Update an existing product
 router.put('/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -54,7 +52,6 @@ router.put('/products/:id', async (req, res) => {
   }
 });
 
-// Delete a product
 router.delete('/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -71,7 +68,6 @@ router.delete('/products/:id', async (req, res) => {
   }
 });
 
-// Get all orders (admin only)
 router.get('/orders', async (req, res) => {
   try {
     const ordersResult = await pool.query(
@@ -101,7 +97,6 @@ router.get('/orders', async (req, res) => {
   }
 });
 
-// Update order status (admin only)
 router.put('/orders/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
@@ -113,7 +108,8 @@ router.put('/orders/:id/status', async (req, res) => {
     }
 
     const result = await pool.query(
-      'UPDATE orders SET status = $1 WHERE id = $2 RETURNING *',
+      `UPDATE orders o SET status = $1 WHERE id = $2
+       RETURNING o.*, (SELECT name FROM users WHERE id = o.user_id) as customer_name, (SELECT email FROM users WHERE id = o.user_id) as customer_email`,
       [status, id]
     );
 
@@ -121,7 +117,15 @@ router.put('/orders/:id/status', async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    res.json(result.rows[0]);
+    const order = result.rows[0];
+
+    // Fire-and-forget — won't block the response
+    sendStatusUpdate(
+      { id: order.id, customerName: order.customer_name, customerEmail: order.customer_email },
+      status
+    );
+
+    res.json(order);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Something went wrong updating the order' });

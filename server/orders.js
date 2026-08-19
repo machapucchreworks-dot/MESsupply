@@ -1,7 +1,7 @@
 const express = require('express');
 const pool = require('./db');
 const authMiddleware = require('./authMiddleware');
-const { sendOrderConfirmation } = require('./mailer');
+const { sendOrderConfirmation, sendNewOrderAlert } = require('./mailer');
 
 const router = express.Router();
 
@@ -11,7 +11,6 @@ const SHIPPING_ZONES = {
 };
 const FREE_SHIPPING_THRESHOLD = 2000;
 
-// Place a new order (protected — must be logged in)
 router.post('/', authMiddleware, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -58,14 +57,12 @@ router.post('/', authMiddleware, async (req, res) => {
       );
     }
 
-    // Get the user's name/email for the confirmation email
     const userResult = await client.query('SELECT name, email FROM users WHERE id = $1', [userId]);
     const customer = userResult.rows[0];
 
     await client.query('COMMIT');
 
-    // Send confirmation email (fire-and-forget — won't block or fail the order response)
-    sendOrderConfirmation({
+    const orderPayload = {
       id: orderId,
       customerName: customer.name,
       customerEmail: customer.email,
@@ -77,7 +74,11 @@ router.post('/', authMiddleware, async (req, res) => {
       landmark,
       phone,
       paymentMethod,
-    });
+    };
+
+    // Fire-and-forget — won't block or fail the order response
+    sendOrderConfirmation(orderPayload);
+    sendNewOrderAlert(orderPayload);
 
     res.json({ orderId, total, subtotal, shippingFee, paymentMethod });
   } catch (err) {
@@ -89,7 +90,6 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// Get logged-in user's order history
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const ordersResult = await pool.query(
