@@ -71,6 +71,68 @@ function Checkout() {
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState('');
 
+  // --- Saved addresses ---
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState('new');
+  const [saveNewAddress, setSaveNewAddress] = useState(false);
+
+  const applyAddress = (addr) => {
+    setPhone(addr.phone || '');
+    setProvince(addr.province || 'Lumbini Province');
+    setDistrict(addr.district || 'Dang');
+    setMunicipality(addr.municipality || '');
+    setStreetAddress(addr.street_address || '');
+    setLandmark(addr.landmark || '');
+    setShippingZone(addr.shipping_zone || 'city');
+    if (addr.lat != null && addr.lng != null) {
+      setCoords({ lat: Number(addr.lat), lng: Number(addr.lng) });
+    } else {
+      setCoords(null);
+    }
+    setLocationError('');
+    setPhoneError('');
+    setMunicipalityError('');
+    setStreetAddressError('');
+  };
+
+  const handleSelectAddress = (addr) => {
+    setSelectedAddressId(String(addr.id));
+    applyAddress(addr);
+  };
+
+  const handleSelectNew = () => {
+    setSelectedAddressId('new');
+    setPhone('');
+    setProvince('Lumbini Province');
+    setDistrict('Dang');
+    setMunicipality('');
+    setStreetAddress('');
+    setLandmark('');
+    setShippingZone('city');
+    setCoords(null);
+    setLocationError('');
+    setSaveNewAddress(false);
+  };
+
+  useEffect(() => {
+    if (!user || !token) return;
+    fetch(`${API_URL}/api/addresses`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!Array.isArray(data)) return;
+        setSavedAddresses(data);
+        if (data.length > 0) {
+          const def = data.find((a) => a.is_default) || data[0];
+          applyAddress(def);
+          setSelectedAddressId(String(def.id));
+        }
+      })
+      .catch((err) => console.error('Error fetching addresses:', err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, token]);
+
   useEffect(() => {
     fetch(`${API_URL}/api/shipping-zones`)
       .then((res) => res.json())
@@ -200,6 +262,35 @@ function Checkout() {
       .filter(Boolean)
       .join(', ');
 
+  const maybeSaveAddress = async () => {
+    if (selectedAddressId !== 'new' || !saveNewAddress) return;
+    try {
+      await fetch(`${API_URL}/api/addresses`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          label: 'Home',
+          phone,
+          province,
+          district,
+          municipality,
+          streetAddress,
+          landmark,
+          shippingZone,
+          lat: coords?.lat ?? null,
+          lng: coords?.lng ?? null,
+          isDefault: savedAddresses.length === 0,
+        }),
+      });
+    } catch (err) {
+      // Non-critical — don't block the order if saving the address fails.
+      console.error('Error saving address:', err);
+    }
+  };
+
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
     setError('');
@@ -238,6 +329,8 @@ function Checkout() {
         setLoading(false);
         return;
       }
+
+      await maybeSaveAddress();
 
       if (paymentMethod === 'cod') {
         clearCart();
@@ -374,6 +467,43 @@ function Checkout() {
         </div>
       </div>
 
+      {savedAddresses.length > 0 && (
+        <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', marginBottom: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <label style={{ ...labelStyle, marginBottom: '12px' }}>Delivery Address</label>
+
+          {savedAddresses.map((addr) => (
+            <label key={addr.id} style={radioCardStyle(selectedAddressId === String(addr.id))}>
+              <input
+                type="radio"
+                name="savedAddress"
+                checked={selectedAddressId === String(addr.id)}
+                onChange={() => handleSelectAddress(addr)}
+              />
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#0B2A4A' }}>
+                  {addr.label || 'Home'}
+                  {addr.is_default ? ' · Default' : ''}
+                </div>
+                <div style={{ fontSize: '13px', color: '#5C7186', marginTop: '2px' }}>
+                  {addr.street_address}, {addr.municipality}, {addr.district}
+                </div>
+                <div style={{ fontSize: '13px', color: '#5C7186' }}>{addr.phone}</div>
+              </div>
+            </label>
+          ))}
+
+          <label style={radioCardStyle(selectedAddressId === 'new')}>
+            <input
+              type="radio"
+              name="savedAddress"
+              checked={selectedAddressId === 'new'}
+              onChange={handleSelectNew}
+            />
+            <span style={{ fontSize: '14px', fontWeight: 600, color: '#0B2A4A' }}>+ Use a new address</span>
+          </label>
+        </div>
+      )}
+
       <form onSubmit={handlePlaceOrder} style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
         <label style={labelStyle}>Phone Number</label>
         <input
@@ -493,6 +623,17 @@ function Checkout() {
           </div>
           {locationError && <p style={{ ...fieldErrorStyle, marginTop: '6px', marginBottom: 0 }}>{locationError}</p>}
         </div>
+
+        {selectedAddressId === 'new' && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px', fontSize: '14px', color: '#0B2A4A', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={saveNewAddress}
+              onChange={(e) => setSaveNewAddress(e.target.checked)}
+            />
+            Save this address for next time
+          </label>
+        )}
 
         <label style={{ ...labelStyle, marginBottom: '10px' }}>Payment Method</label>
         <label style={radioCardStyle(paymentMethod === 'cod')}>

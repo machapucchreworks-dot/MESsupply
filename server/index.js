@@ -6,6 +6,7 @@ const authRoutes = require('./auth');
 const ordersRoutes = require('./orders');
 const esewaRoutes = require('./esewa');
 const reviewsRoutes = require('./reviews');
+const addressesRoutes = require('./addresses');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -21,6 +22,7 @@ app.use('/api/esewa', esewaRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewsRoutes);
+app.use('/api/addresses', addressesRoutes);
 
 // Get shipping zones and free-shipping threshold
 app.get('/api/shipping-zones', (req, res) => {
