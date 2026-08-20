@@ -5,16 +5,38 @@ const { sendOrderConfirmation, sendNewOrderAlert } = require('./mailer');
 
 const router = express.Router();
 
+const STORE_LAT = 28.1322557;
+const STORE_LNG = 82.3002296;
+
 const SHIPPING_ZONES = {
-  city: { label: 'Inside Tulsipur City', fee: 50 },
+  city: { label: 'Inside Tulsipur City' }, // fee calculated from distance
   valley: { label: 'Dang Valley (inside/outside)', fee: 180 },
 };
 const FREE_SHIPPING_THRESHOLD = 2000;
 
+// Haversine formula — straight-line distance in km between two lat/lng points
+function distanceKm(lat1, lng1, lat2, lng2) {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const R = 6371; // Earth's radius in km
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function tulsipurFee(customerLat, customerLng) {
+  const km = distanceKm(STORE_LAT, STORE_LNG, customerLat, customerLng);
+  const roundedKm = Math.ceil(km);
+  return Math.max(20, roundedKm * 10);
+}
+
 router.post('/', authMiddleware, async (req, res) => {
   const client = await pool.connect();
   try {
-    const { items, shippingAddress, paymentMethod, phone, landmark, shippingZone } = req.body;
+    const { items, shippingAddress, paymentMethod, phone, landmark, shippingZone, customerLat, customerLng } = req.body;
     const userId = req.userId;
 
     if (!items || items.length === 0) {
@@ -29,20 +51,32 @@ router.post('/', authMiddleware, async (req, res) => {
     if (!SHIPPING_ZONES[shippingZone]) {
       return res.status(400).json({ error: 'Invalid shipping zone' });
     }
+    if (shippingZone === 'city' && (customerLat == null || customerLng == null)) {
+      return res.status(400).json({ error: 'Location is required for Tulsipur City delivery' });
+    }
     if (!['cod', 'esewa'].includes(paymentMethod)) {
       return res.status(400).json({ error: 'Invalid payment method' });
     }
 
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_ZONES[shippingZone].fee;
+
+    let shippingFee;
+    if (subtotal >= FREE_SHIPPING_THRESHOLD) {
+      shippingFee = 0;
+    } else if (shippingZone === 'city') {
+      shippingFee = tulsipurFee(customerLat, customerLng);
+    } else {
+      shippingFee = SHIPPING_ZONES.valley.fee;
+    }
+
     const total = subtotal + shippingFee;
 
     await client.query('BEGIN');
 
     const orderResult = await client.query(
-      `INSERT INTO orders (user_id, total, shipping_address, payment_method, payment_status, phone, landmark, shipping_zone, shipping_fee)
-       VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8) RETURNING id`,
-      [userId, total, shippingAddress, paymentMethod, phone, landmark || null, shippingZone, shippingFee]
+      `INSERT INTO orders (user_id, total, shipping_address, payment_method, payment_status, phone, landmark, shipping_zone, shipping_fee, customer_lat, customer_lng)
+       VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8, $9, $10) RETURNING id`,
+      [userId, total, shippingAddress, paymentMethod, phone, landmark || null, shippingZone, shippingFee, customerLat || null, customerLng || null]
     );
     const orderId = orderResult.rows[0].id;
 
@@ -76,7 +110,6 @@ router.post('/', authMiddleware, async (req, res) => {
       paymentMethod,
     };
 
-    // Fire-and-forget — won't block or fail the order response
     sendOrderConfirmation(orderPayload);
     sendNewOrderAlert(orderPayload);
 

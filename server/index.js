@@ -26,7 +26,7 @@ app.use('/api/reviews', reviewsRoutes);
 app.get('/api/shipping-zones', (req, res) => {
   res.json({
     zones: {
-      city: { label: 'Inside Tulsipur City', fee: 50 },
+      city: { label: 'Inside Tulsipur City', distanceBased: true, description: 'Rs. 20 for up to 2km, +Rs. 10 per additional km' },
       valley: { label: 'Dang Valley (inside/outside)', fee: 180 },
     },
     freeShippingThreshold: 2000,

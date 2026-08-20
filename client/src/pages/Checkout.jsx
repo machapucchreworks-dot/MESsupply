@@ -5,14 +5,30 @@ import { useAuth } from '../context/AuthContext';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+const STORE_LAT = 28.1322557;
+const STORE_LNG = 82.3002296;
+
+function distanceKm(lat1, lng1, lat2, lng2) {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function tulsipurFeeFromCoords(lat, lng) {
+  const km = distanceKm(STORE_LAT, STORE_LNG, lat, lng);
+  const roundedKm = Math.ceil(km);
+  return Math.max(20, roundedKm * 10);
+}
+
 const PROVINCES = [
-  'Koshi Province',
-  'Madhesh Province',
-  'Bagmati Province',
-  'Gandaki Province',
-  'Lumbini Province',
-  'Karnali Province',
-  'Sudurpashchim Province',
+  'Koshi Province', 'Madhesh Province', 'Bagmati Province', 'Gandaki Province',
+  'Lumbini Province', 'Karnali Province', 'Sudurpashchim Province',
 ];
 
 const DISTRICTS = [
@@ -51,6 +67,10 @@ function Checkout() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const [coords, setCoords] = useState(null); // { lat, lng }
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState('');
+
   useEffect(() => {
     fetch(`${API_URL}/api/shipping-zones`)
       .then((res) => res.json())
@@ -62,8 +82,15 @@ function Checkout() {
   }, []);
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shippingFee =
-    subtotal >= freeThreshold || !zones[shippingZone] ? 0 : zones[shippingZone].fee;
+
+  let shippingFee = 0;
+  if (subtotal < freeThreshold) {
+    if (shippingZone === 'city') {
+      shippingFee = coords ? tulsipurFeeFromCoords(coords.lat, coords.lng) : 0;
+    } else if (zones[shippingZone]) {
+      shippingFee = zones[shippingZone].fee;
+    }
+  }
   const total = subtotal + shippingFee;
 
   const pageWrap = (children) => (
@@ -92,7 +119,6 @@ function Checkout() {
     );
   }
 
-  // Only allow digits in the phone field, and cap at 10 characters
   const handlePhoneChange = (e) => {
     const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
     setPhone(digitsOnly);
@@ -109,7 +135,27 @@ function Checkout() {
     if (streetAddressError) setStreetAddressError('');
   };
 
-  // Returns true if valid, false if invalid (and sets the relevant error state)
+  const handleShareLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Your browser does not support location sharing.');
+      return;
+    }
+    setLocating(true);
+    setLocationError('');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setLocating(false);
+      },
+      (err) => {
+        console.error(err);
+        setLocationError('Could not get your location. Please allow location access and try again.');
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const validateFields = () => {
     let valid = true;
 
@@ -135,6 +181,11 @@ function Checkout() {
       valid = false;
     } else {
       setStreetAddressError('');
+    }
+
+    if (shippingZone === 'city' && !coords) {
+      setLocationError('Please share your location for delivery within Tulsipur City.');
+      valid = false;
     }
 
     return valid;
@@ -170,6 +221,8 @@ function Checkout() {
           landmark,
           shippingZone,
           paymentMethod,
+          customerLat: shippingZone === 'city' ? coords?.lat : null,
+          customerLng: shippingZone === 'city' ? coords?.lng : null,
         }),
       });
 
@@ -301,7 +354,13 @@ function Checkout() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: '14px', color: '#5C7186' }}>
             <span>Shipping</span>
-            <span>{shippingFee === 0 ? 'Free' : `Rs. ${shippingFee.toFixed(2)}`}</span>
+            <span>
+              {subtotal >= freeThreshold
+                ? 'Free'
+                : shippingZone === 'city' && !coords
+                ? 'Share location to calculate'
+                : `Rs. ${shippingFee.toFixed(2)}`}
+            </span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid #E5E9ED' }}>
             <span style={{ fontWeight: 700, color: '#0B2A4A' }}>Total</span>
@@ -386,16 +445,49 @@ function Checkout() {
         <label style={labelStyle}>Delivery Zone</label>
         <select
           value={shippingZone}
-          onChange={(e) => setShippingZone(e.target.value)}
+          onChange={(e) => {
+            setShippingZone(e.target.value);
+            setLocationError('');
+          }}
           required
           style={{ ...inputStyle(false), marginBottom: '18px' }}
         >
           {Object.entries(zones).map(([key, zone]) => (
             <option key={key} value={key}>
-              {zone.label} — Rs. {zone.fee}
+              {zone.label}{key === 'valley' ? ` — Rs. ${zone.fee}` : ' — based on distance'}
             </option>
           ))}
         </select>
+
+        {shippingZone === 'city' && (
+          <div style={{ marginBottom: '18px' }}>
+            <label style={labelStyle}>Delivery Location (required)</label>
+            <div
+              onClick={handleShareLocation}
+              style={{
+                border: `2px dashed ${coords ? '#1B8A5A' : locationError ? '#D93636' : '#E5E9ED'}`,
+                borderRadius: '8px',
+                padding: '16px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                backgroundColor: coords ? '#F0FAF5' : '#FAFBFC',
+              }}
+            >
+              {locating ? (
+                <span style={{ color: '#5C7186', fontSize: '14px' }}>Getting your location...</span>
+              ) : coords ? (
+                <span style={{ color: '#1B8A5A', fontSize: '14px', fontWeight: 600 }}>
+                  ✓ Location shared ({coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}) — tap to update
+                </span>
+              ) : (
+                <span style={{ color: '#0B2A4A', fontSize: '14px', fontWeight: 600 }}>
+                  📍 Tap to share your current location
+                </span>
+              )}
+            </div>
+            {locationError && <p style={{ ...fieldErrorStyle, marginTop: '6px', marginBottom: 0 }}>{locationError}</p>}
+          </div>
+        )}
 
         <label style={{ ...labelStyle, marginBottom: '10px' }}>Payment Method</label>
         <label style={radioCardStyle(paymentMethod === 'cod')}>
