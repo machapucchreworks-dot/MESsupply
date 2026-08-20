@@ -83,6 +83,8 @@ function Checkout() {
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+  // Only Tulsipur City uses distance-based pricing. Every other zone keeps its fixed fee
+  // regardless of whether the customer shared their location.
   let shippingFee = 0;
   if (subtotal < freeThreshold) {
     if (shippingZone === 'city') {
@@ -135,6 +137,7 @@ function Checkout() {
     if (streetAddressError) setStreetAddressError('');
   };
 
+  // Same coordinate-capture logic as before — reused for whichever zone is currently selected.
   const handleShareLocation = () => {
     if (!navigator.geolocation) {
       setLocationError('Your browser does not support location sharing.');
@@ -183,8 +186,9 @@ function Checkout() {
       setStreetAddressError('');
     }
 
-    if (shippingZone === 'city' && !coords) {
-      setLocationError('Please share your location for delivery within Tulsipur City.');
+    // Location is now required for every zone, not just Tulsipur City.
+    if (!coords) {
+      setLocationError('Please share your location for delivery.');
       valid = false;
     }
 
@@ -221,8 +225,9 @@ function Checkout() {
           landmark,
           shippingZone,
           paymentMethod,
-          customerLat: shippingZone === 'city' ? coords?.lat : null,
-          customerLng: shippingZone === 'city' ? coords?.lng : null,
+          // Location is now sent for every zone, not just city — used for pricing only in city.
+          customerLat: coords?.lat ?? null,
+          customerLng: coords?.lng ?? null,
         }),
       });
 
@@ -454,40 +459,40 @@ function Checkout() {
         >
           {Object.entries(zones).map(([key, zone]) => (
             <option key={key} value={key}>
-              {zone.label}{key === 'valley' ? ` — Rs. ${zone.fee}` : ' — based on distance'}
+              {zone.label}{key === 'city' ? ' — based on distance' : ` — Rs. ${zone.fee}`}
             </option>
           ))}
         </select>
 
-        {shippingZone === 'city' && (
-          <div style={{ marginBottom: '18px' }}>
-            <label style={labelStyle}>Delivery Location (required)</label>
-            <div
-              onClick={handleShareLocation}
-              style={{
-                border: `2px dashed ${coords ? '#1B8A5A' : locationError ? '#D93636' : '#E5E9ED'}`,
-                borderRadius: '8px',
-                padding: '16px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                backgroundColor: coords ? '#F0FAF5' : '#FAFBFC',
-              }}
-            >
-              {locating ? (
-                <span style={{ color: '#5C7186', fontSize: '14px' }}>Getting your location...</span>
-              ) : coords ? (
-                <span style={{ color: '#1B8A5A', fontSize: '14px', fontWeight: 600 }}>
-                  ✓ Location shared ({coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}) — tap to update
-                </span>
-              ) : (
-                <span style={{ color: '#0B2A4A', fontSize: '14px', fontWeight: 600 }}>
-                  📍 Tap to share your current location
-                </span>
-              )}
-            </div>
-            {locationError && <p style={{ ...fieldErrorStyle, marginTop: '6px', marginBottom: 0 }}>{locationError}</p>}
+        {/* Tap-to-share-location — same behavior for every zone. Only city uses it for pricing;
+            other zones keep their fixed fee and simply attach the coordinates to the order. */}
+        <div style={{ marginBottom: '18px' }}>
+          <label style={labelStyle}>Delivery Location (required)</label>
+          <div
+            onClick={handleShareLocation}
+            style={{
+              border: `2px dashed ${coords ? '#1B8A5A' : locationError ? '#D93636' : '#E5E9ED'}`,
+              borderRadius: '8px',
+              padding: '16px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              backgroundColor: coords ? '#F0FAF5' : '#FAFBFC',
+            }}
+          >
+            {locating ? (
+              <span style={{ color: '#5C7186', fontSize: '14px' }}>Getting your location...</span>
+            ) : coords ? (
+              <span style={{ color: '#1B8A5A', fontSize: '14px', fontWeight: 600 }}>
+                ✓ Location shared ({coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}) — tap to update
+              </span>
+            ) : (
+              <span style={{ color: '#0B2A4A', fontSize: '14px', fontWeight: 600 }}>
+                📍 Tap to share your current location
+              </span>
+            )}
           </div>
-        )}
+          {locationError && <p style={{ ...fieldErrorStyle, marginTop: '6px', marginBottom: 0 }}>{locationError}</p>}
+        </div>
 
         <label style={{ ...labelStyle, marginBottom: '10px' }}>Payment Method</label>
         <label style={radioCardStyle(paymentMethod === 'cod')}>
